@@ -1,8 +1,37 @@
 import csv
+import json
 import time
 from datetime import datetime, timedelta
 
 import requests
+
+
+"""
+Alpaca
+api_key = 'AK0Y5BXQYHL5A7KS0UMK'
+api_secret_key = 'aVSXr7xIAsXrfdb1dYSgaDGReJLFxVK2AuwAcV6P'
+"""
+
+
+def process_error_message(response):
+    msg = response.text
+    try:
+        msg = json.dumps(response.json(), indent=4)
+    except Exception:
+        pass
+
+    print("WARNING: Error #%d occurred while fetching comments. \n"
+          " -> Reason: %s \n"
+          " -> Info: %s" % (
+              response.status_code,
+              response.reason,
+              msg
+          ))
+
+    if response.status_code == 429:
+        # Si el error es "Too Many Requests", se espera 1m
+        print("Too Many Requests error. Proceeding to sleep 1 minute")
+        time.sleep(60)
 
 
 def fetch_comments(base_url, stock_aliases, start_date, end_date, batch_size, delta):
@@ -11,7 +40,10 @@ def fetch_comments(base_url, stock_aliases, start_date, end_date, batch_size, de
     current_start_date = start_date
     current_end_date = current_start_date - delta
 
+    n_retries = 5
+
     while current_end_date >= end_date:
+        retry = False
         results_buffer = {}
         for word in stock_aliases:
             ref = time.time()
@@ -33,19 +65,23 @@ def fetch_comments(base_url, stock_aliases, start_date, end_date, batch_size, de
                 data = response.json()
 
                 # Se van recogiendo los valores en un diccionario para evitar duplicados
-                for value in data['data']:
-                    results_buffer[value['id']] = value
+                for value in data['data']: results_buffer[value['id']] = value
             else:
-                print(f"Error {response.status_code} occurred while fetching comments.")
+                retry = True
+                n_retries -= 1
+                process_error_message(response)
 
+            # Esperamos lo suficiente como para que cada iteración dure almenos 1s y no saturar la API
             time.sleep(max(.0, 1.0 - (time.time() - ref)))
 
         results = list(results_buffer.values())
-        results.sort(key=lambda x: -x['score'])
+        results.sort(key=lambda x: -x['score'] if x['score'] is not None else 0)
         all_comments += results[:batch_size]
 
-        current_start_date -= delta
-        current_end_date -= delta
+        if not retry or retry and n_retries <= 0:
+            n_retries = 5
+            current_start_date -= delta
+            current_end_date -= delta
 
     # Sort the results in ascending order by the 'created_utc' field
     all_comments.sort(key=lambda x: x['created_utc'])
@@ -100,17 +136,30 @@ def write_posts_to_csv(comments, filename):
 
 
 def main():
-    stocks = {
+    # Los comentados ya se han descargado OK
+    """
+    v0:
         'AAPL': ['AAPL', 'Tim Cook'],
+        'SPY': ['SPY', 'S&P 500'],
         'MSFT': ['MSFT', 'Microsoft', 'Satya Nadella'],
         'AMZN': ['AMZN', 'Amazon', 'Jeff Bezos'],
-        'SPY': ['SPY', 'S&P 500'],
         'GOOG': ['GOOG', 'Google', 'Alphabet inc.', 'Sundar Pichai'],
         'TSLA': ['TSLA', 'Tesla', 'Elon Musk'],
         'BBRK': ['BBRK', 'Berkshire Hathaway'],
         'JPM': ['JPM', 'JPMorgan', 'Jamie Dimon'],
         'CVX': ['CVX', 'Chevron', 'Mike Wirth'],
         'T': ['AT&T', 'John T. Stankey', 'John Stankey'],
+    """
+    stocks = {
+        'AAPL': ['AAPL', 'Tim Cook'],
+        'SPY': ['SPY', 'S&P 500'],
+        'MSFT': ['MSFT', 'Microsoft', 'Satya Nadella'],
+        'AMZN': ['AMZN', 'Amazon', 'Jeff Bezos'],
+        'GOOG': ['GOOG', 'Google', 'Alphabet inc.', 'Sundar Pichai'],
+        'TSLA': ['TSLA', 'Tesla', 'Elon Musk'],
+        'BBRK': ['BBRK', 'Berkshire Hathaway'],
+        'JPM': ['JPM', 'JPMorgan', 'Jamie Dimon'],
+        'CVX': ['CVX', 'Chevron', 'Mike Wirth'],
     }
 
     params = {
@@ -130,7 +179,7 @@ def main():
             **params
         )
         print("Writing %d %s comments" % (len(comments), stock))
-        write_comments_to_csv(comments, f"{stock}_comments.csv")
+        write_comments_to_csv(comments, f"data/{stock}_comments.csv")
 
         print("Fetching %s submissions" % stock)
         submissions = fetch_comments(
@@ -139,7 +188,7 @@ def main():
             **params
         )
         print("Writing %d %s comments" % (len(submissions), stock))
-        write_posts_to_csv(submissions, f"{stock}_submissions.csv")
+        write_posts_to_csv(submissions, f"data/{stock}_submissions.csv")
 
 
 if __name__ == "__main__":
