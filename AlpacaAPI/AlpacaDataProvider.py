@@ -1,4 +1,5 @@
 from time import sleep
+from typing import Optional
 
 import pandas as pd
 import requests
@@ -20,12 +21,12 @@ class AlpacaDataProvider:
         self.data_type = data_type
         self.other_params = kwargs
 
-    def get_request_params(self, page_token):
-        if self.data_type == 'trades':
+    def get_request_params(self, page_token: Optional[str], limit: int = 10000):
+        if self.data_type in ['trades', 'quotes']:
             return {
                 'start': self.start_date,
                 'end': self.end_date,
-                'limit': 10000,
+                'limit': limit,
                 'symbols': ",".join(self.symbols),
                 'page_token': page_token if page_token is not None else ''
             }
@@ -33,7 +34,7 @@ class AlpacaDataProvider:
             return {
                 'start': self.start_date,
                 'end': self.end_date,
-                'limit': 10000,
+                'limit': limit,
                 'symbols': ",".join(self.symbols),
                 'timeframe': self.other_params['timeframe'],
                 'page_token': page_token if page_token is not None else ''
@@ -41,14 +42,18 @@ class AlpacaDataProvider:
         else:
             return None
 
-    def execute_request(self, page_token, retries=None):
+    def execute_request(self, page_token, retries=None, limit=10000) -> (Optional[str], Optional[dict]):
+        if retries is not None and retries < 0:
+            return None, None
+
         try:
             response = requests.get(generic_url + self.data_type, headers={
                 'APCA-API-KEY-ID': api_key,
                 'APCA-API-SECRET-KEY': api_secret_key
-            }, params=self.get_request_params(page_token))
-        except ConnectionError:
+            }, params=self.get_request_params(page_token, limit=limit))
+        except requests.exceptions.ConnectionError or requests.exceptions.ReadTimeout:
             print("ConnectionError raised. Retrying download")
+            sleep(10)
             return self.execute_request(page_token, retries=(retries - 1) if retries is not None else 5)
 
         if response.status_code == 200:
@@ -78,7 +83,10 @@ class AlpacaDataProvider:
                 continue
 
             new_df: pd.DataFrame = pd.DataFrame(data[symbol])
-            new_df['symbol'] = symbol
+
+            if not self.other_params.get('massive_download'):
+                new_df['symbol'] = symbol
+
             new_df['t'] = pd.to_datetime(new_df['t'])
             new_df.set_index('t', inplace=True)
 
@@ -86,12 +94,20 @@ class AlpacaDataProvider:
 
         df.sort_index(inplace=True)
 
-        if self.data_type == 'trades':
+        if self.data_type in ['trades']:
             if 'u' in df.columns:
                 df = df[df['u'] == 'canceled']
                 df = df.drop(columns=['u'])
 
             df = df.drop(columns=['c', 'i', 'z'])
 
+        elif self.data_type in ['quotes']:
+            df = df.drop(columns=['c', 'z'])
+
         return df
 
+    def get_first_instance(self, symbol):
+        _, raw_data = self.execute_request(None, limit=1)
+        assert raw_data is not None
+
+        return self.generate_dataframe(raw_data)
