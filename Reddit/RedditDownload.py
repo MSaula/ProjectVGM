@@ -149,17 +149,39 @@ def main():
         'JPM': ['JPM', 'JPMorgan', 'Jamie Dimon'],
         'CVX': ['CVX', 'Chevron', 'Mike Wirth'],
         'T': ['AT&T', 'John T. Stankey', 'John Stankey'],
+    ------------------------------------------------------------------------------
+    v1:
+        'AAPL': ['AAPL'],
+        'MSFT': ['MSFT'],
+        'GOOG': ['GOOG'],
+        'AMZN': ['AMZN'],
+        'NVDA': ['NVDA'],
+        'TSLA': ['TSLA'],
+        'META': ['META'],
+        'XOM': ['XOM'],
+        'JPM': ['JPM'],
+        'CVX': ['CVX'],
+        'BAC': ['BAC'],
+        'KO': ['KO'],
+        'BABA': ['BABA'],
+        'PFE': ['PFE'],
+        'SPY': ['SPY', 'S&P 500'],
     """
     stocks = {
-        'AAPL': ['AAPL', 'Tim Cook'],
-        'SPY': ['SPY', 'S&P 500'],
-        'MSFT': ['MSFT', 'Microsoft', 'Satya Nadella'],
-        'AMZN': ['AMZN', 'Amazon', 'Jeff Bezos'],
-        'GOOG': ['GOOG', 'Google', 'Alphabet inc.', 'Sundar Pichai'],
-        'TSLA': ['TSLA', 'Tesla', 'Elon Musk'],
-        'BBRK': ['BBRK', 'Berkshire Hathaway'],
-        'JPM': ['JPM', 'JPMorgan', 'Jamie Dimon'],
-        'CVX': ['CVX', 'Chevron', 'Mike Wirth'],
+        'AAPL': ['AAPL'],
+        'MSFT': ['MSFT'],
+        'GOOG': ['GOOG'],
+        'AMZN': ['AMZN'],
+        'NVDA': ['NVDA'],
+        'TSLA': ['TSLA'],
+        'META': ['META'],
+        'XOM': ['XOM'],
+        'JPM': ['JPM'],
+        'CVX': ['CVX'],
+        'BAC': ['BAC'],
+        'KO': ['KO'],
+        'BABA': ['BABA'],
+        'PFE': ['PFE']
     }
 
     params = {
