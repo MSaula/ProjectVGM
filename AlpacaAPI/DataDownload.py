@@ -102,17 +102,19 @@ def massive_download(
 def download_top15_bars():
     download_data(
         AlpacaDataProvider(
-            symbol=[
-                'AAPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA', 'TSLA', 'META',
-                'XOM', 'JPM', 'CVX', 'BAC', 'KO', 'BABA', 'PFE'
-            ],
+            symbol=['SPY'
+                    # 'AAPL', 'MSFT', 'GOOG', 'AMZN', 'NVDA', 'TSLA', 'META',
+                    # 'XOM', 'JPM', 'CVX', 'BAC', 'KO', 'BABA', 'PFE'
+                    ],
             start_date='2000-01-03T00:00:00Z',
             end_date='2023-04-02T23:59:59Z',
             data_type='bars',
             timeframe='1Hour'
         )
-    ).to_csv("bars_v1.csv")
+    ).to_csv("bars_spy.csv")
 
+
+# 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
 
 def download_all_trades():
     download_data(
@@ -129,6 +131,9 @@ def download_all_trades():
 
 
 if __name__ == "__main__":
+    download_top15_bars()
+
+    exit()
     massive_download(
         data_type='quotes',
         symbol='AAPL',
