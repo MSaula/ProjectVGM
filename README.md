@@ -17,9 +17,6 @@ En resumen, la API de Alpaca sirve para realizar la descarga de los datos del hi
 ## Reddit
 Este paquete tiene como objetivo la recolección de comentarios y _posts_ de la red social Reddit en relación a los activos económicos con los que se ha tratado.
 
-## datasets
-Esta carpeta se encuentra vacía dado que sirve para recoger los datasets los cuales ocupan demasiado para compartirlos al sistema de VCS.
-
 ## ETL_Notebooks
 En este directorio se recoge los Jupyter Notebooks usados con la finalidad de procesar los datos de los módulos anteriores para obtener un único dataset final con todos los datos listos para su procesado.
 
